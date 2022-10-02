@@ -28,5 +28,6 @@ fn main() -> anyhow::Result<()> {
         List => task::list_tasks(file),
         Done { position } => task::complete_task(file, position),
     }?;
+
     Ok(())
 }

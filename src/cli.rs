@@ -8,7 +8,7 @@ pub enum Action {
     Add {
         /// Task description text
         #[arg()]
-        task: String,
+        text: String,
     },
 
     /// Remove a task from the todo list
@@ -25,9 +25,9 @@ pub enum Action {
 #[command(author, version, about, long_about = None)]
 pub struct CommandLineArgs {
     #[command(subcommand)]
-    action: Action,
+    pub action: Action,
 
     /// File path to store todo list
     #[arg(short, long)]
-    file: Option<PathBuf>,
+    pub file: Option<PathBuf>,
 }

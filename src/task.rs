@@ -6,8 +6,7 @@ use std::{
 };
 
 use chrono::{serde::ts_seconds, DateTime, Local, Utc};
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {

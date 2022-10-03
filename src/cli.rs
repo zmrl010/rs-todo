@@ -3,20 +3,18 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 #[derive(Subcommand, Debug)]
-pub enum Action {
+pub enum TaskCommand {
     /// Add a task to the todo list
     Add {
         /// Task description text
         #[arg()]
         text: String,
     },
-
     /// Remove a task from the todo list
     Done {
         #[arg()]
         position: usize,
     },
-
     /// List all tasks in a todo list
     List,
 }
@@ -25,9 +23,15 @@ pub enum Action {
 #[command(author, version, about, long_about = None)]
 pub struct CommandLineArgs {
     #[command(subcommand)]
-    pub action: Action,
+    pub command: TaskCommand,
 
-    /// File path to store todo list
+    /// Directory to task lists
     #[arg(short, long)]
     pub file: Option<PathBuf>,
+}
+
+#[test]
+fn verify_cli() {
+    use clap::CommandFactory;
+    CommandLineArgs::command().debug_assert()
 }

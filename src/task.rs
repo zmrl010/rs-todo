@@ -25,8 +25,10 @@ impl fmt::Display for Task {
 
 impl Task {
     pub fn new(text: String) -> Task {
-        let created_at: DateTime<Utc> = Utc::now();
-        Task { text, created_at }
+        Task {
+            text,
+            created_at: Utc::now(),
+        }
     }
 }
 
@@ -50,6 +52,7 @@ pub fn add_task(path: PathBuf, task: Task) -> io::Result<()> {
         .open(path)?;
 
     let mut tasks = collect_tasks(&file)?;
+
     tasks.push(task);
 
     serde_json::to_writer(file, &tasks)?;
@@ -78,10 +81,8 @@ pub fn list_tasks(path: PathBuf) -> io::Result<()> {
     if tasks.is_empty() {
         println!("Task list is empty!");
     } else {
-        let mut order = 1u32;
-        for task in tasks {
-            println!("{}: {}", order, task);
-            order += 1;
+        for (i, task) in tasks.iter().enumerate() {
+            println!("{}: {}", i + 1, task);
         }
     }
 

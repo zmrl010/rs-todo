@@ -21,7 +21,7 @@ pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
         .ok_or(anyhow!("Failed to find data file."))?;
 
     match args.command {
-        Add { text, .. } => task::add_task(file_path, Task::new(text)),
+        Add { text } => task::add_task(file_path, Task::new(text)),
         List => task::list_tasks(file_path),
         Done { position } => task::complete_task(file_path, position),
     }?;

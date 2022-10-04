@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    fs::{File, OpenOptions},
+    fs::File,
     io::{self, Error, ErrorKind, Seek, SeekFrom},
     path::PathBuf,
 };
@@ -48,7 +48,7 @@ fn collect_tasks(mut file: &File) -> io::Result<Vec<Task>> {
 }
 
 pub fn add_task(path: PathBuf, task: Task) -> io::Result<()> {
-    let file = OpenOptions::new()
+    let file = File::options()
         .read(true)
         .write(true)
         .create(true)
@@ -64,7 +64,7 @@ pub fn add_task(path: PathBuf, task: Task) -> io::Result<()> {
 }
 
 pub fn complete_task(path: PathBuf, task_position: usize) -> io::Result<()> {
-    let file = OpenOptions::new().read(true).write(true).open(path)?;
+    let file = File::options().read(true).write(true).open(path)?;
     let mut tasks = collect_tasks(&file)?;
     if task_position == 0 || task_position > tasks.len() {
         return Err(Error::new(ErrorKind::InvalidInput, "Invalid Task ID"));
@@ -78,7 +78,7 @@ pub fn complete_task(path: PathBuf, task_position: usize) -> io::Result<()> {
 }
 
 pub fn list_tasks(path: PathBuf) -> io::Result<()> {
-    let file = OpenOptions::new().read(true).open(path)?;
+    let file = File::open(path)?;
     let tasks = collect_tasks(&file)?;
 
     if tasks.is_empty() {

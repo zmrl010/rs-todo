@@ -3,8 +3,6 @@ mod task;
 
 use std::path::PathBuf;
 
-pub use clap::Parser;
-
 use anyhow::anyhow;
 use cli::{CommandLineArgs, TaskCommand::*};
 use task::Task;

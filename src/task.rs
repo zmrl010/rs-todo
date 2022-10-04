@@ -14,6 +14,8 @@ pub struct Task {
 
     #[serde(with = "ts_seconds")]
     created_at: DateTime<Utc>,
+
+    complete: bool,
 }
 
 impl fmt::Display for Task {
@@ -28,6 +30,7 @@ impl Task {
         Task {
             text,
             created_at: Utc::now(),
+            complete: false,
         }
     }
 }
@@ -66,7 +69,7 @@ pub fn complete_task(path: PathBuf, task_position: usize) -> io::Result<()> {
     if task_position == 0 || task_position > tasks.len() {
         return Err(Error::new(ErrorKind::InvalidInput, "Invalid Task ID"));
     }
-    tasks.remove(task_position - 1);
+    tasks[task_position - 1].complete = true;
     file.set_len(0)?;
 
     serde_json::to_writer(file, &tasks)?;

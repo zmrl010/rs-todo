@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+pub use clap::Parser;
+use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub enum TaskCommand {

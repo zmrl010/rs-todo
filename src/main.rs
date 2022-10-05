@@ -1,4 +1,7 @@
-use rs_todo::{self, cli::{CommandLineArgs, Parser}};
+use rs_todo::{
+    self,
+    cli::{CommandLineArgs, Parser},
+};
 
 fn main() -> anyhow::Result<()> {
     let args = CommandLineArgs::parse();

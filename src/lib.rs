@@ -1,4 +1,5 @@
 pub mod cli;
+mod state;
 mod task;
 
 use std::path::PathBuf;

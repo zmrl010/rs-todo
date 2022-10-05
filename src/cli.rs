@@ -26,7 +26,7 @@ pub struct CommandLineArgs {
     #[command(subcommand)]
     pub command: TaskCommand,
 
-    /// Directory to task lists
+    /// File path to list
     #[arg(short, long)]
     pub file: Option<PathBuf>,
 }

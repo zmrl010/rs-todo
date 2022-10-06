@@ -5,16 +5,24 @@ mod task;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
+use clap::Parser;
 use cli::{CommandLineArgs, TaskCommand::*};
+use dirs;
 use task::Task;
 
 fn find_default_data_file() -> Option<PathBuf> {
-    home::home_dir().map(|mut path| {
+    dirs::data_dir().map(|mut path| {
         path.push(".rs-todo.json");
         path
     })
 }
 
+/// Parse from `std::env::args_os()`, exit on error
+pub fn parse() -> CommandLineArgs {
+    CommandLineArgs::parse()
+}
+
+/// Start application
 pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
     let file_path = args
         .file

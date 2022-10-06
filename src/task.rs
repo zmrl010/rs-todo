@@ -36,13 +36,13 @@ impl Task {
 }
 
 fn collect_tasks(mut file: &File) -> io::Result<Vec<Task>> {
-    file.seek(SeekFrom::Start(0))?; // Rewind before
+    file.rewind()?; // Rewind before
     let tasks = match serde_json::from_reader(file) {
         Ok(tasks) => tasks,
         Err(e) if e.is_eof() => Vec::new(),
         Err(e) => Err(e)?,
     };
-    file.seek(SeekFrom::Start(0))?; // Rewind after
+    file.rewind()?; // Rewind after
 
     Ok(tasks)
 }

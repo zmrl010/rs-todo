@@ -1,12 +1,11 @@
+use chrono::{serde::ts_seconds, DateTime, Local, Utc};
+use serde::{Deserialize, Serialize};
 use std::{
     fmt,
     fs::File,
-    io::{self, Error, ErrorKind, Seek, SeekFrom},
+    io::{self, BufReader, Error, ErrorKind, Read, Seek},
     path::PathBuf,
 };
-
-use chrono::{serde::ts_seconds, DateTime, Local, Utc};
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
@@ -37,11 +36,16 @@ impl Task {
 
 fn collect_tasks(mut file: &File) -> io::Result<Vec<Task>> {
     file.rewind()?; // Rewind before
-    let tasks = match serde_json::from_reader(file) {
+    let mut contents = Vec::new();
+    let mut buf = BufReader::new(file);
+    buf.read_to_end(&mut contents)?;
+    // serde_json::from_slice(&bytes)?;
+    let tasks = match serde_json::from_slice(&contents) {
         Ok(tasks) => tasks,
         Err(e) if e.is_eof() => Vec::new(),
         Err(e) => Err(e)?,
     };
+
     file.rewind()?; // Rewind after
 
     Ok(tasks)
@@ -55,7 +59,6 @@ pub fn add_task(path: PathBuf, task: Task) -> io::Result<()> {
         .open(path)?;
 
     let mut tasks = collect_tasks(&file)?;
-
     tasks.push(task);
 
     serde_json::to_writer(file, &tasks)?;
@@ -70,7 +73,11 @@ pub fn complete_task(path: PathBuf, task_position: usize) -> io::Result<()> {
     if task_position == 0 || task_position > tasks.len() {
         return Err(Error::new(ErrorKind::InvalidInput, "Invalid Task ID"));
     }
-    tasks[task_position - 1].complete = true;
+
+    tasks.get_mut(task_position - 1).and_then(|task| {
+        task.complete = true;
+        Some(())
+    });
 
     serde_json::to_writer(file, &tasks)?;
 

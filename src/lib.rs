@@ -5,7 +5,7 @@ mod task;
 
 use anyhow::anyhow;
 pub use anyhow::Result;
-use clap::Parser;
+pub use clap::Parser;
 pub use cli::CommandLineArgs;
 use cli::TaskCommand::*;
 use dirs;

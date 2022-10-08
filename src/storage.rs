@@ -1,23 +1,30 @@
-pub mod json {
-    use serde::{self, de::DeserializeOwned, Serialize};
-    use std::{fs, path::Path};
+use anyhow::Context;
+use std::{
+    fs,
+    io::{Read, Write},
+    path::Path,
+};
 
-    /// Composes [fs::read] and [serde_json::from_slice]
-    /// to read JSON data from a file at `path`
-    pub fn read_from_file<P: AsRef<Path>, T: DeserializeOwned>(path: P) -> anyhow::Result<T> {
-        let bytes = fs::read(path)?;
-        let data: T = serde_json::from_slice(&bytes)?;
+/// Base trait for implementing storage backend
+pub trait StorageBackend: Read + Write {}
+
+pub trait FileStorageBackend: StorageBackend {
+    fn read<P>(path: P) -> anyhow::Result<Vec<u8>>
+    where
+        P: AsRef<Path>,
+    {
+        let data = fs::read(&path)
+            .with_context(|| format!("Failed to read from {}", path.as_ref().display()))?;
         Ok(data)
     }
 
-    /// Composes [fs::write] and [serde_json::to_string]
-    /// to write JSON data to a file at `path`
-    pub fn write_to_file<P: AsRef<Path>, T: ?Sized + Serialize>(
-        path: P,
-        data: &T,
-    ) -> anyhow::Result<()> {
-        let contents = serde_json::to_string(data)?;
-        fs::write(path, contents)?;
+    fn write<P, C>(path: P, data: C) -> anyhow::Result<()>
+    where
+        P: AsRef<Path>,
+        C: AsRef<[u8]>,
+    {
+        fs::write(&path, data)
+            .with_context(|| format!("Failed to write to {}", path.as_ref().display()))?;
         Ok(())
     }
 }

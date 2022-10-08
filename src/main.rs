@@ -1,6 +1,6 @@
-use rs_todo;
+use rs_todo::{self, CommandLineArgs, Parser};
 
 fn main() -> rs_todo::Result<()> {
-    let args = rs_todo::parse();
+    let args = CommandLineArgs::parse();
     rs_todo::run(args)
 }

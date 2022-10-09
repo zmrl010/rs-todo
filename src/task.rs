@@ -45,7 +45,7 @@ impl TaskList {
 }
 
 /// Retrieve tasks from storage
-fn collect_tasks<R: Read>(rdr: R) -> io::Result<TaskList> {
+fn collect_tasks<R: Read>(rdr: R) -> anyhow::Result<TaskList> {
     let contents = {
         let mut buf_reader = BufReader::new(rdr);
         let mut contents = Vec::new();

@@ -36,40 +36,36 @@ impl Task {
 fn collect_tasks(path: &PathBuf) -> io::Result<Vec<Task>> {
     let contents = fs::read(path)?;
     let tasks = serde_json::from_slice(&contents)?;
-
     Ok(tasks)
+}
+
+fn write_tasks(path: &PathBuf, tasks: Vec<Task>) -> io::Result<()> {
+    let contents = serde_json::to_vec(&tasks)?;
+    fs::write(path, contents)
 }
 
 pub fn add_task(path: PathBuf, task: Task) -> io::Result<()> {
     let mut tasks = collect_tasks(&path)?;
     tasks.push(task);
-
-    let bytes = serde_json::to_vec(&tasks)?;
-    fs::write(path, &bytes)?;
-
-    Ok(())
+    write_tasks(&path, tasks)
 }
 
-pub fn complete_task(path: PathBuf, task_position: usize) -> io::Result<()> {
+pub fn complete_task(path: PathBuf, position: usize) -> io::Result<()> {
     let mut tasks = collect_tasks(&path)?;
-    if task_position == 0 || task_position > tasks.len() {
+    if position == 0 || position > tasks.len() {
         return Err(Error::new(ErrorKind::InvalidInput, "Invalid Task ID"));
     }
 
-    tasks.get_mut(task_position - 1).and_then(|task| {
+    tasks.get_mut(position - 1).and_then(|task| {
         task.complete = true;
         Some(())
     });
 
-    let bytes = serde_json::to_vec(&tasks)?;
-    fs::write(path, &bytes)?;
-
-    Ok(())
+    write_tasks(&path, tasks)
 }
 
 pub fn list_tasks(path: PathBuf) -> io::Result<()> {
     let tasks = collect_tasks(&path)?;
-
     if tasks.is_empty() {
         println!("Task list is empty!");
     } else {

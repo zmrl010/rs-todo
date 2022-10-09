@@ -1,6 +1,5 @@
 pub mod cli;
 mod state;
-mod storage;
 mod task;
 
 use anyhow::anyhow;
@@ -21,7 +20,7 @@ fn find_default_data_file() -> Option<PathBuf> {
 
 /// Parse from `std::env::args_os()`, exit on error
 ///
-/// Convenience function for [clap::derive::Parser::parse]
+/// Convenient alias for [Parser::parse]
 pub fn parse() -> CommandLineArgs {
     CommandLineArgs::parse()
 }

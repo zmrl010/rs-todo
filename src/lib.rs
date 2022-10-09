@@ -1,4 +1,5 @@
 pub mod cli;
+mod index;
 mod state;
 mod task;
 

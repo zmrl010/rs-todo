@@ -1,18 +1,15 @@
 use serde::{self, Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf};
-
-/// file index with name keys and path values
-pub type Index = HashMap<String, PathBuf>;
+use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct State {
-    /// path to active list
+    /// path to active task list
     active: PathBuf,
 }
 
 impl State {
     fn new() -> Self {
-        State {
+        Self {
             active: PathBuf::new(),
         }
     }

@@ -1,8 +1,10 @@
+use anyhow::anyhow;
 use chrono::{serde::ts_seconds, DateTime, Local, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{self, Deserialize, Serialize};
 use std::{
-    fmt, fs,
-    io::{self, Error, ErrorKind},
+    fmt,
+    fs::File,
+    io::{self, BufReader, Read, Write},
     path::PathBuf,
 };
 
@@ -24,8 +26,8 @@ impl fmt::Display for Task {
 }
 
 impl Task {
-    pub fn new(text: String) -> Task {
-        Task {
+    pub fn new(text: String) -> Self {
+        Self {
             text,
             created_at: Utc::now(),
             complete: false,
@@ -33,43 +35,83 @@ impl Task {
     }
 }
 
-fn collect_tasks(path: &PathBuf) -> io::Result<Vec<Task>> {
-    let contents = fs::read(path)?;
+#[derive(Debug, Deserialize, Serialize, Default)]
+struct TaskList(Vec<Task>);
+
+impl TaskList {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+}
+
+/// Retrieve tasks from storage
+fn collect_tasks<R: Read>(rdr: R) -> io::Result<TaskList> {
+    let contents = {
+        let mut buf_reader = BufReader::new(rdr);
+        let mut contents = Vec::new();
+        buf_reader.read_to_end(&mut contents)?;
+        contents
+    };
+
     let tasks = serde_json::from_slice(&contents)?;
     Ok(tasks)
 }
 
-fn write_tasks(path: &PathBuf, tasks: Vec<Task>) -> io::Result<()> {
-    let contents = serde_json::to_vec(&tasks)?;
-    fs::write(path, contents)
+/// Save tasks to storage, overwriting any existing data if it exists
+fn commit_tasks<W: Write>(writer: W, task_list: TaskList) -> anyhow::Result<()> {
+    serde_json::to_writer(writer, &task_list)?;
+    Ok(())
 }
 
-pub fn add_task(path: PathBuf, task: Task) -> io::Result<()> {
-    let mut tasks = collect_tasks(&path)?;
-    tasks.push(task);
-    write_tasks(&path, tasks)
+pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
+    let file = File::options()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(path)?;
+
+    let task_list = {
+        let mut task_list = collect_tasks(&file)?;
+        task_list.0.push(task);
+        task_list
+    };
+
+    commit_tasks(&file, task_list)
 }
 
-pub fn complete_task(path: PathBuf, position: usize) -> io::Result<()> {
-    let mut tasks = collect_tasks(&path)?;
-    if position == 0 || position > tasks.len() {
-        return Err(Error::new(ErrorKind::InvalidInput, "Invalid Task ID"));
+pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
+    let file = File::options()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(path)?;
+
+    let mut task_list = collect_tasks(&file)?;
+    if position == 0 || position > task_list.0.len() {
+        let err = io::Error::new(io::ErrorKind::InvalidInput, "Invalid Task ID");
+        return Err(anyhow!(err));
     }
 
-    tasks.get_mut(position - 1).and_then(|task| {
+    fn set_task_complete(task: &mut Task) -> Option<Task> {
         task.complete = true;
-        Some(())
-    });
+        None
+    }
 
-    write_tasks(&path, tasks)
+    task_list
+        .0
+        .get_mut(position - 1)
+        .and_then(set_task_complete);
+
+    commit_tasks(&file, task_list)
 }
 
-pub fn list_tasks(path: PathBuf) -> io::Result<()> {
-    let tasks = collect_tasks(&path)?;
-    if tasks.is_empty() {
+pub fn list_tasks(path: PathBuf) -> anyhow::Result<()> {
+    let file = File::options().read(true).open(path)?;
+    let task_list = collect_tasks(&file)?;
+    if task_list.0.is_empty() {
         println!("Task list is empty!");
     } else {
-        for (i, task) in tasks.iter().enumerate() {
+        for (i, task) in task_list.0.iter().enumerate() {
             println!("{}: {}", i + 1, task);
         }
     }

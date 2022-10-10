@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "jscearcy.rust-doc-viewer",
+    "rust-lang.rust-analyzer",
+    "swellaby.vscode-rust-test-adapter",
+    "serayuzgur.crates",
+    "panicbit.cargo"
+  ]
+}

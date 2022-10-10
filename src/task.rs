@@ -1,10 +1,11 @@
-use anyhow::anyhow;
+use anyhow::{ensure, Context};
 use chrono::{serde::ts_seconds, DateTime, Local, Utc};
 use serde::{self, Deserialize, Serialize};
+use std::ops::{Deref, DerefMut};
 use std::{
     fmt,
     fs::File,
-    io::{self, BufReader, Read, Write},
+    io::{BufReader, Read, Write},
     path::PathBuf,
 };
 
@@ -44,13 +45,27 @@ impl TaskList {
     }
 }
 
+impl Deref for TaskList {
+    type Target = Vec<Task>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for TaskList {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 /// Retrieve tasks from storage
 fn collect_tasks<R: Read>(rdr: R) -> anyhow::Result<TaskList> {
     let contents = {
         let mut buf_reader = BufReader::new(rdr);
-        let mut contents = Vec::new();
-        buf_reader.read_to_end(&mut contents)?;
-        contents
+        let mut buffer = Vec::new();
+        buf_reader.read_to_end(&mut buffer)?;
+        buffer
     };
 
     let tasks = serde_json::from_slice(&contents)?;
@@ -68,15 +83,16 @@ pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
         .read(true)
         .write(true)
         .create(true)
-        .open(path)?;
+        .open(&path)
+        .with_context(|| format!("Failed to open file \"{}\"", path.display()))?;
 
     let task_list = {
         let mut task_list = collect_tasks(&file)?;
-        task_list.0.push(task);
+        task_list.push(task);
         task_list
     };
 
-    commit_tasks(&file, task_list)
+    commit_tasks(file, task_list)
 }
 
 pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
@@ -84,34 +100,40 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
         .read(true)
         .write(true)
         .create(true)
-        .open(path)?;
-
-    let mut task_list = collect_tasks(&file)?;
-    if position == 0 || position > task_list.0.len() {
-        let err = io::Error::new(io::ErrorKind::InvalidInput, "Invalid Task ID");
-        return Err(anyhow!(err));
-    }
+        .open(&path)
+        .with_context(|| format!("Failed to open file \"{}\"", path.display()))?;
 
     fn set_task_complete(task: &mut Task) -> Option<Task> {
         task.complete = true;
         None
     }
 
-    task_list
-        .0
-        .get_mut(position - 1)
-        .and_then(set_task_complete);
+    let task_list = {
+        let mut task_list = collect_tasks(&file)?;
+        ensure!(
+            position > 0 && position <= task_list.len(),
+            "Invalid `position` (expected > 0 && <= {}, found {})",
+            task_list.len(),
+            position,
+        );
+
+        task_list.get_mut(position - 1).and_then(set_task_complete);
+        task_list
+    };
 
     commit_tasks(&file, task_list)
 }
 
 pub fn list_tasks(path: PathBuf) -> anyhow::Result<()> {
-    let file = File::options().read(true).open(path)?;
+    let file = File::options()
+        .read(true)
+        .open(&path)
+        .with_context(|| format!("Failed to open file \"{}\"", path.display()))?;
     let task_list = collect_tasks(&file)?;
-    if task_list.0.is_empty() {
+    if task_list.is_empty() {
         println!("Task list is empty!");
     } else {
-        for (i, task) in task_list.0.iter().enumerate() {
+        for (i, task) in task_list.iter().enumerate() {
             println!("{}: {}", i + 1, task);
         }
     }

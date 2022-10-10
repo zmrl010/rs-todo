@@ -45,6 +45,30 @@ impl TaskList {
     }
 }
 
+/// Implements string formatting for TaskList
+impl fmt::Display for TaskList {
+    /// # Overflow Behavior
+    ///
+    /// This method uses [`Enumerate`] to generate indexes as [`usize`], which does not
+    /// guard against overflows, so enumerating more than [`usize::MAX`] elements either
+    /// produces the wrong result or panics. If debug assertions are enabled, a panic is guaranteed.
+    ///
+    /// # Panics
+    ///
+    /// The internal iterator might panic if the to-be-returned index would
+    /// overflow a [`usize`].
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            write!(f, "Task list is empty!")?;
+        } else {
+            for (i, task) in self.iter().enumerate() {
+                writeln!(f, "{}: {}", i + 1, task)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl Deref for TaskList {
     type Target = Vec<Task>;
 
@@ -73,8 +97,8 @@ fn collect_tasks<R: Read>(rdr: R) -> anyhow::Result<TaskList> {
 }
 
 /// Save tasks to storage, overwriting any existing data if it exists
-fn commit_tasks<W: Write>(writer: W, task_list: TaskList) -> anyhow::Result<()> {
-    serde_json::to_writer(writer, &task_list)?;
+fn commit_tasks<W: Write>(writer: W, value: TaskList) -> anyhow::Result<()> {
+    serde_json::to_writer(writer, &value)?;
     Ok(())
 }
 
@@ -110,9 +134,10 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
 
     let task_list = {
         let mut task_list = collect_tasks(&file)?;
+
         ensure!(
             position > 0 && position <= task_list.len(),
-            "Invalid `position` (expected > 0 && <= {}, found {})",
+            "Invalid `position` (expected 0 < *n* <= {}, found {})",
             task_list.len(),
             position,
         );
@@ -130,13 +155,8 @@ pub fn list_tasks(path: PathBuf) -> anyhow::Result<()> {
         .open(&path)
         .with_context(|| format!("Failed to open file \"{}\"", path.display()))?;
     let task_list = collect_tasks(&file)?;
-    if task_list.is_empty() {
-        println!("Task list is empty!");
-    } else {
-        for (i, task) in task_list.iter().enumerate() {
-            println!("{}: {}", i + 1, task);
-        }
-    }
+
+    println!("{}", task_list);
 
     Ok(())
 }

@@ -1,3 +1,7 @@
+//! Command line interface
+//!
+//! Using [`clap`] to do most of the legwork
+
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -27,6 +31,13 @@ pub struct CommandLineArgs {
     /// File path to list
     #[arg(short, long)]
     pub file: Option<PathBuf>,
+}
+
+/// Parse from `std::env::args_os()`, exit on error
+///
+/// Convenient alias for [Parser::parse]
+pub fn parse() -> CommandLineArgs {
+    CommandLineArgs::parse()
 }
 
 #[test]

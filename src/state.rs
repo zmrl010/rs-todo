@@ -1,3 +1,7 @@
+//! # Application State
+//!
+//! Provides [`State`] structure for representing application state
+
 use serde::{self, Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -13,4 +17,10 @@ impl State {
             active: PathBuf::new(),
         }
     }
+}
+
+/// Structure to encapsulate application data storage
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Store {
+    state: State,
 }

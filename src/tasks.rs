@@ -13,6 +13,10 @@ use std::{
     path::PathBuf,
 };
 
+mod error {
+    pub enum Error {}
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
     pub text: String,
@@ -62,8 +66,11 @@ fn collect_tasks(mut file: &File) -> anyhow::Result<Vec<Task>> {
 
 /// Append [`Task`] to a list
 ///
+/// # Arguments
+///
 /// * `path` - location of the list
 /// * `task` - task to add
+///
 pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
     let file = File::options()
         .read(true)

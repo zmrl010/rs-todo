@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct State {
     /// path to active task list
     active: PathBuf,
@@ -13,9 +13,7 @@ pub struct State {
 
 impl State {
     fn new() -> Self {
-        Self {
-            active: PathBuf::new(),
-        }
+        Self::default()
     }
 }
 

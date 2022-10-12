@@ -3,19 +3,19 @@
 //! Provides [`Task`] structure representing a single task  
 //! and related operations
 
-use anyhow::ensure;
+use anyhow::bail;
 use chrono::{serde::ts_seconds, DateTime, Local, Utc};
-use serde::{self, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{fmt, path::PathBuf};
 
-use crate::{fs, json, task_list::TaskList};
+use crate::{fsx, json};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
-    text: String,
+    pub text: String,
     #[serde(with = "ts_seconds")]
-    created_at: DateTime<Utc>,
-    complete: bool,
+    pub created_at: DateTime<Utc>,
+    pub complete: bool,
 }
 
 impl fmt::Display for Task {
@@ -52,8 +52,14 @@ pub fn create<S: AsRef<str>>(text: S) -> Task {
     Task::new(text)
 }
 
+pub type TaskList = Vec<Task>;
+
+/// Append [`Task`] to a list
+///
+/// * `path` - location of the list
+/// * `task` - task to add
 pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
-    let file = fs::open_file(path)?;
+    let file = fsx::open_file(path)?;
 
     let task_list = {
         let mut task_list: TaskList = json::read(&file)?;
@@ -61,38 +67,52 @@ pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
         task_list
     };
 
-    json::write(file, task_list)
+    json::to_writer(file, &task_list)?;
+    Ok(())
 }
 
+/// Mark [`Task`] as completed in a list at the file `path`
+///
+/// * `path` - location of the list
+/// * `position` - item's index in the list **1-based**
 pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
-    let file = fs::open_file(path)?;
-
-    fn set_task_complete(task: &mut Task) -> Option<Task> {
-        task.complete = true;
-        None
-    }
-
-    let task_list = {
-        let mut task_list: TaskList = json::read(&file)?;
-
-        ensure!(
-            position > 0 && position <= task_list.len(),
+    let file = fsx::open_file(path)?;
+    let task_list: TaskList = json::read(&file)?;
+    if position == 0 || position > task_list.len() {
+        bail!(
             "Invalid `position` (expected 0 < *n* <= {}, found {})",
             task_list.len(),
             position,
-        );
+        )
+    }
 
-        task_list.get_mut(position - 1).and_then(set_task_complete);
+    let task_list = {
+        let mut task_list = task_list;
+        if let Some(mut task) = task_list.get_mut(position - 1) {
+            task.complete = true;
+        }
         task_list
     };
 
-    json::write(file, task_list)
+    json::to_writer(file, &task_list)?;
+
+    Ok(())
 }
 
-pub fn list_tasks(path: PathBuf) -> anyhow::Result<()> {
-    let task_list: TaskList = json::read_file(path)?;
+/// List all [`Task`]s in a list
+///
+/// * `path` - location of the list
+pub fn list_all(path: PathBuf) -> anyhow::Result<()> {
+    let bytes = fsx::read_file(path)?;
+    let task_list: TaskList = json::from_slice(&bytes)?;
 
-    println!("{}", task_list);
+    if task_list.is_empty() {
+        println!("Task list is empty!");
+    } else {
+        for (i, task) in task_list.iter().enumerate() {
+            println!("{}: {}", i + 1, task);
+        }
+    }
 
     Ok(())
 }

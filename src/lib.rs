@@ -1,28 +1,44 @@
 mod cli;
-mod fs;
-mod index;
+mod fsx;
 mod json;
-mod setup;
 mod state;
 mod task;
-mod task_list;
+
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use anyhow::anyhow;
 pub use anyhow::Result;
 use cli::TaskCommand::*;
 pub use cli::{parse, CommandLineArgs};
 
+/// Get application data directory starting from system user's data directory
+///
+/// Uses [`dirs::data_dir`]
+fn find_data_dir<P: AsRef<Path>>(dir: P) -> Option<PathBuf> {
+    fn inner(dir: &Path) -> Option<PathBuf> {
+        dirs::data_dir().map(|mut path| {
+            path.push(dir);
+            path
+        })
+    }
+
+    inner(dir.as_ref())
+}
+
 /// Start application
 pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
-    let file_path = args
-        .file
-        .or_else(setup::find_default_data_dir)
-        .ok_or(anyhow!("Failed to find data file."))?;
+    let data_dir =
+        find_data_dir(".rs-todo/").ok_or_else(|| anyhow!("Failed to find data directory"))?;
+
+    fs::create_dir_all(&data_dir)?;
 
     match args.command {
-        Add { text } => task::add_task(file_path, task::create(text)),
-        List => task::list_tasks(file_path),
-        Done { position } => task::complete_task(file_path, position),
+        Add { text } => task::add_task(data_dir, task::create(text)),
+        List => task::list_all(data_dir),
+        Done { position } => task::complete_task(data_dir, position),
     }?;
 
     Ok(())

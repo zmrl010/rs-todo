@@ -2,8 +2,8 @@
 //!
 //! Provides [`State`] structure for representing application state
 
-use serde::{self, Deserialize, Serialize};
-use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct State {
@@ -19,8 +19,5 @@ impl State {
     }
 }
 
-/// Structure to encapsulate application data storage
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Store {
-    state: State,
-}
+/// File index with name keys and path values
+pub type Index = HashMap<String, PathBuf>;

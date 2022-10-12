@@ -3,7 +3,6 @@
 //! Using [`clap`] to do most of the legwork
 
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub enum TaskCommand {
@@ -27,10 +26,6 @@ pub enum TaskCommand {
 pub struct CommandLineArgs {
     #[command(subcommand)]
     pub command: TaskCommand,
-
-    /// File path to list
-    #[arg(short, long)]
-    pub file: Option<PathBuf>,
 }
 
 /// Parse from `std::env::args_os()`, exit on error

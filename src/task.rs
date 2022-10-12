@@ -8,8 +8,6 @@ use chrono::{serde::ts_seconds, DateTime, Local, Utc};
 use serde::{Deserialize, Serialize};
 use std::{fmt, path::PathBuf};
 
-use crate::{fsx, json};
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
     pub text: String,
@@ -35,23 +33,6 @@ impl Task {
     }
 }
 
-/// [`Task`] factory - initialize a [`Task`] by supplying text
-///
-/// # Examples
-///
-/// ```rust
-/// use task;
-///
-/// fn main() {
-///     let t = task::create("Brush teeth");
-///     assert_eq!(t.text, "Brush teeth");
-/// }
-///
-/// ```
-pub fn create<S: AsRef<str>>(text: S) -> Task {
-    Task::new(text)
-}
-
 pub type TaskList = Vec<Task>;
 
 /// Append [`Task`] to a list
@@ -59,15 +40,15 @@ pub type TaskList = Vec<Task>;
 /// * `path` - location of the list
 /// * `task` - task to add
 pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
-    let file = fsx::open_file(path)?;
-
+    let file = crate::io::open_file(path)?;
+    let bytes = crate::io::read(&file)?;
     let task_list = {
-        let mut task_list: TaskList = json::read(&file)?;
+        let mut task_list: TaskList = serde_json::from_slice(&bytes)?;
         task_list.push(task);
         task_list
     };
 
-    json::to_writer(file, &task_list)?;
+    serde_json::to_writer(file, &task_list)?;
     Ok(())
 }
 
@@ -76,8 +57,9 @@ pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
 /// * `path` - location of the list
 /// * `position` - item's index in the list **1-based**
 pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
-    let file = fsx::open_file(path)?;
-    let task_list: TaskList = json::read(&file)?;
+    let file = crate::io::open_file(path)?;
+    let bytes = crate::io::read(&file)?;
+    let task_list: TaskList = serde_json::from_slice(&bytes)?;
     if position == 0 || position > task_list.len() {
         bail!(
             "Invalid `position` (expected 0 < *n* <= {}, found {})",
@@ -94,7 +76,7 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
         task_list
     };
 
-    json::to_writer(file, &task_list)?;
+    serde_json::to_writer(file, &task_list)?;
 
     Ok(())
 }
@@ -103,8 +85,8 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
 ///
 /// * `path` - location of the list
 pub fn list_all(path: PathBuf) -> anyhow::Result<()> {
-    let bytes = fsx::read_file(path)?;
-    let task_list: TaskList = json::from_slice(&bytes)?;
+    let bytes = crate::io::read_file(path)?;
+    let task_list: TaskList = serde_json::from_slice(&bytes)?;
 
     if task_list.is_empty() {
         println!("Task list is empty!");

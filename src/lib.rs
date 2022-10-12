@@ -1,6 +1,5 @@
 mod cli;
-mod fsx;
-mod json;
+mod io;
 mod state;
 mod task;
 
@@ -13,6 +12,7 @@ use anyhow::anyhow;
 pub use anyhow::Result;
 use cli::TaskCommand::*;
 pub use cli::{parse, CommandLineArgs};
+use task::Task;
 
 /// Get application data directory starting from system user's data directory
 ///
@@ -36,7 +36,7 @@ pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
     fs::create_dir_all(&data_dir)?;
 
     match args.command {
-        Add { text } => task::add_task(data_dir, task::create(text)),
+        Add { text } => task::add_task(data_dir, Task::new(text)),
         List => task::list_all(data_dir),
         Done { position } => task::complete_task(data_dir, position),
     }?;

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fmt,
     fs::File,
-    io::{BufReader, Read},
+    io::{BufReader, Read, Seek},
     path::PathBuf,
 };
 
@@ -38,14 +38,26 @@ impl Task {
     }
 }
 
-pub type TaskList = Vec<Task>;
-
 /// Read bytes from a reader
 fn read<R: Read>(rdr: R) -> anyhow::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(rdr);
     let mut buffer = Vec::new();
     buf_reader.read_to_end(&mut buffer)?;
     Ok(buffer)
+}
+
+fn collect_tasks(mut file: &File) -> anyhow::Result<Vec<Task>> {
+    file.rewind()?; // Rewind before
+    let bytes = read(file)?;
+    let tasks = serde_json::from_slice(&bytes).or_else(|err| {
+        if err.is_eof() {
+            return Ok(Vec::new());
+        }
+        Err(err)
+    })?;
+    file.rewind()?; // Rewind after
+
+    Ok(tasks)
 }
 
 /// Append [`Task`] to a list
@@ -61,8 +73,7 @@ pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
         .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
 
     let task_list = {
-        let bytes = read(&file)?;
-        let mut task_list: TaskList = serde_json::from_slice(&bytes)?;
+        let mut task_list = collect_tasks(&file)?;
         task_list.push(task);
         task_list
     };
@@ -84,8 +95,7 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
         .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
 
     let task_list = {
-        let bytes = read(&file)?;
-        let mut task_list: TaskList = serde_json::from_slice(&bytes)?;
+        let mut task_list = collect_tasks(&file)?;
         if position == 0 || position > task_list.len() {
             bail!(
                 "Invalid `position` (expected 0 < *n* <= {}, found {})",
@@ -108,15 +118,11 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
 ///
 /// * `path` - location of the list
 pub fn list_all(path: PathBuf) -> anyhow::Result<()> {
-    let task_list = {
-        let file = File::options()
-            .read(true)
-            .open(&path)
-            .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
-        let bytes = read(file)?;
-        let task_list: TaskList = serde_json::from_slice(&bytes)?;
-        task_list
-    };
+    let file = File::options()
+        .read(true)
+        .open(&path)
+        .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
+    let task_list = collect_tasks(&file)?;
 
     if task_list.is_empty() {
         println!("Task list is empty!");

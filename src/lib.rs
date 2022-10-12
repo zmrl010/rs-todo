@@ -1,7 +1,6 @@
 mod cli;
-mod io;
 mod state;
-mod task;
+mod tasks;
 
 use std::{
     fs,
@@ -12,20 +11,16 @@ use anyhow::anyhow;
 pub use anyhow::Result;
 use cli::TaskCommand::*;
 pub use cli::{parse, CommandLineArgs};
-use task::Task;
+use tasks::Task;
 
 /// Get application data directory starting from system user's data directory
 ///
-/// Uses [`dirs::data_dir`]
+/// [`dirs::data_dir`]
 fn find_data_dir<P: AsRef<Path>>(dir: P) -> Option<PathBuf> {
-    fn inner(dir: &Path) -> Option<PathBuf> {
-        dirs::data_dir().map(|mut path| {
-            path.push(dir);
-            path
-        })
-    }
-
-    inner(dir.as_ref())
+    dirs::data_dir().map(|mut data_dir| {
+        data_dir.push(dir);
+        data_dir
+    })
 }
 
 /// Start application
@@ -36,9 +31,9 @@ pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
     fs::create_dir_all(&data_dir)?;
 
     match args.command {
-        Add { text } => task::add_task(data_dir, Task::new(text)),
-        List => task::list_all(data_dir),
-        Done { position } => task::complete_task(data_dir, position),
+        Add { text } => tasks::add_task(data_dir, Task::new(text)),
+        List => tasks::list_all(data_dir),
+        Done { position } => tasks::complete_task(data_dir, position),
     }?;
 
     Ok(())

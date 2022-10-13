@@ -5,17 +5,20 @@
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 
+/// Application state structure
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct State {
-    /// path to active task list
-    active: PathBuf,
+    /// index key of current active list
+    pub active_list: String,
+    /// file index using name key to get path of task list
+    pub index: HashMap<String, PathBuf>,
 }
 
 impl State {
-    fn new() -> Self {
-        Self::default()
+    pub fn new() -> Self {
+        Self {
+            active_list: String::new(),
+            index: HashMap::new(),
+        }
     }
 }
-
-/// File index with name keys and path values
-pub type Index = HashMap<String, PathBuf>;

@@ -3,7 +3,7 @@
 //! Provides [`Task`] structure representing a single task  
 //! and related operations
 
-use anyhow::{bail, Context};
+use anyhow::bail;
 use chrono::{serde::ts_seconds, DateTime, Local, Utc};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -13,9 +13,8 @@ use std::{
     path::PathBuf,
 };
 
-mod error {
-    pub enum Error {}
-}
+#[derive(Debug, Deserialize, Serialize)]
+pub enum ErrorKind {}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
@@ -42,8 +41,7 @@ impl Task {
     }
 }
 
-/// Read bytes from a reader
-fn read<R: Read>(rdr: R) -> anyhow::Result<Vec<u8>> {
+fn read_all_bytes<R: Read>(rdr: R) -> anyhow::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(rdr);
     let mut buffer = Vec::new();
     buf_reader.read_to_end(&mut buffer)?;
@@ -52,7 +50,7 @@ fn read<R: Read>(rdr: R) -> anyhow::Result<Vec<u8>> {
 
 fn collect_tasks(mut file: &File) -> anyhow::Result<Vec<Task>> {
     file.rewind()?; // Rewind before
-    let bytes = read(file)?;
+    let bytes = read_all_bytes(file)?;
     let tasks = serde_json::from_slice(&bytes).or_else(|err| {
         if err.is_eof() {
             return Ok(Vec::new());
@@ -70,14 +68,12 @@ fn collect_tasks(mut file: &File) -> anyhow::Result<Vec<Task>> {
 ///
 /// * `path` - location of the list
 /// * `task` - task to add
-///
-pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
+pub fn add_task(path: &PathBuf, task: Task) -> anyhow::Result<()> {
     let file = File::options()
         .read(true)
         .write(true)
         .create(true)
-        .open(&path)
-        .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
+        .open(&path)?;
 
     let task_list = {
         let mut task_list = collect_tasks(&file)?;
@@ -91,15 +87,16 @@ pub fn add_task(path: PathBuf, task: Task) -> anyhow::Result<()> {
 
 /// Mark [`Task`] as completed in a list at the file `path`
 ///
+/// # Arguments
+///
 /// * `path` - location of the list
 /// * `position` - item's index in the list **1-based**
-pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
+pub fn complete_task(path: &PathBuf, position: usize) -> anyhow::Result<()> {
     let file = File::options()
         .read(true)
         .write(true)
         .create(true)
-        .open(&path)
-        .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
+        .open(&path)?;
 
     let task_list = {
         let mut task_list = collect_tasks(&file)?;
@@ -123,12 +120,11 @@ pub fn complete_task(path: PathBuf, position: usize) -> anyhow::Result<()> {
 
 /// List all [`Task`]s in a list
 ///
+/// # Arguments
+///
 /// * `path` - location of the list
-pub fn list_all(path: PathBuf) -> anyhow::Result<()> {
-    let file = File::options()
-        .read(true)
-        .open(&path)
-        .with_context(|| format!("Failed to open: \"{}\"", path.display()))?;
+pub fn list_all(path: &PathBuf) -> anyhow::Result<()> {
+    let file = File::options().read(true).open(&path)?;
     let task_list = collect_tasks(&file)?;
 
     if task_list.is_empty() {

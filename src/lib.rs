@@ -3,10 +3,7 @@ mod json;
 mod state;
 mod tasks;
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 
 use anyhow::anyhow;
 pub use anyhow::Result;
@@ -15,22 +12,22 @@ pub use cli::{parse, CommandLineArgs};
 use state::State;
 use tasks::Task;
 
-const DEFAULT_DATA_DIR: &str = ".rs-todo/";
-
 /// Get application data directory starting from system user's data directory
 ///
 /// [`dirs::data_dir`]
-fn find_data_dir<P: AsRef<Path>>(dir: P) -> Option<PathBuf> {
+fn find_default_data_dir() -> Option<PathBuf> {
     dirs::data_dir().map(|mut data_dir| {
-        data_dir.push(dir);
+        data_dir.push(".rs-todo/");
         data_dir
     })
 }
 
 /// Start application
 pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
-    let data_dir =
-        find_data_dir(DEFAULT_DATA_DIR).ok_or_else(|| anyhow!("Failed to find data directory"))?;
+    let data_dir = args
+        .data_dir
+        .or_else(find_default_data_dir)
+        .ok_or_else(|| anyhow!("Failed to find data directory"))?;
 
     fs::create_dir_all(&data_dir)?;
 
@@ -42,7 +39,7 @@ pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
 
     let list_path = index
         .entry(active_list)
-        .or_insert(data_dir.with_file_name("[default].json"));
+        .or_insert_with_key(|key| data_dir.with_file_name(format!("{}.json", key)));
 
     match args.command {
         Add { text } => tasks::add_task(list_path, Task::new(text)),

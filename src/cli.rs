@@ -2,9 +2,12 @@
 //!
 //! Using [`clap`] to do most of the legwork
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Subcommand, Debug)]
+/// Commands for [`crate::tasks::Task`]
 pub enum TaskCommand {
     /// Add a task to the todo list
     Add {
@@ -23,9 +26,14 @@ pub enum TaskCommand {
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+/// Command-line interface for rs-todo
 pub struct CommandLineArgs {
+    /// task subcommand to act on active list
     #[command(subcommand)]
     pub command: TaskCommand,
+    /// data directory where application state is stored
+    #[arg(short, long, env)]
+    pub data_dir: Option<PathBuf>,
 }
 
 /// Parse from `std::env::args_os()`, exit on error

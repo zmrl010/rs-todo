@@ -5,11 +5,15 @@ use serde::{de::DeserializeOwned, Serialize};
 
 /// Load and deserialize `T` from the file at the specified path
 ///
+/// See: [`fs::read`] and [`serde_json::from_slice`]
+///
+/// # Arguments
+///
+/// * `path` - path of the file
+///
 /// # Errors
 ///
 /// Can fail while reading the file or deserializing it's data.
-///
-/// See: [`fs::read`] and [`serde_json::from_slice`]
 pub fn from_file<P, T>(path: P) -> anyhow::Result<T>
 where
     P: AsRef<Path>,
@@ -23,6 +27,8 @@ where
 
 /// Serialize `value` and save to the file at the specified path
 ///
+/// See: [`fs::write`] and [`serde_json::to_vec`]
+///
 /// # Arguments
 ///
 /// * `path` - path of the file
@@ -31,7 +37,6 @@ where
 /// # Errors
 ///
 /// Can fail while opening file or writing to it.
-/// See: [`fs::write`] and [`serde_json::to_vec`]
 pub fn to_file<P, T>(path: P, value: T) -> anyhow::Result<()>
 where
     P: AsRef<Path>,

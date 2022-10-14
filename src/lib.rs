@@ -35,7 +35,7 @@ pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
     let State {
         active_list,
         mut index,
-    } = json::from_file(state_path).or_else(|_| anyhow::Ok(State::new()))?;
+    } = json::from_file(state_path).or_else(|_| anyhow::Ok(State::default()))?;
 
     let list_path = index
         .entry(active_list)

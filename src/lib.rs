@@ -6,11 +6,12 @@ mod tasks;
 use std::{fs, path::PathBuf};
 
 use anyhow::anyhow;
-pub use anyhow::Result;
 use cli::TaskCommand::*;
-pub use cli::{parse, CommandLineArgs};
 use state::State;
 use tasks::Task;
+
+pub use anyhow::Result;
+pub use cli::{parse, CommandLineArgs};
 
 /// Get application data directory starting from system user's data directory
 ///
@@ -22,20 +23,23 @@ fn find_default_data_dir() -> Option<PathBuf> {
     })
 }
 
-/// Start application
-pub fn run(args: CommandLineArgs) -> anyhow::Result<()> {
-    let data_dir = args
-        .data_dir
+fn init_data_dir(dir: Option<PathBuf>) -> crate::Result<PathBuf> {
+    let data_dir = dir
         .or_else(find_default_data_dir)
         .ok_or_else(|| anyhow!("Failed to find data directory"))?;
-
     fs::create_dir_all(&data_dir)?;
+    Ok(data_dir)
+}
 
-    let state_path = data_dir.with_file_name(".state.json");
+/// Start application
+pub fn run(args: CommandLineArgs) -> crate::Result<()> {
+    let data_dir = init_data_dir(args.data_dir)?;
+
+    let state_file_path = data_dir.with_file_name(".state.json");
     let State {
         active_list,
         mut index,
-    } = json::from_file(state_path).or_else(|_| anyhow::Ok(State::default()))?;
+    } = json::from_file(state_file_path).unwrap_or_default();
 
     let list_path = index
         .entry(active_list)

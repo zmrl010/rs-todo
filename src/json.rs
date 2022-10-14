@@ -14,7 +14,7 @@ use serde::{de::DeserializeOwned, Serialize};
 /// # Errors
 ///
 /// Can fail while reading the file or deserializing it's data.
-pub fn from_file<P, T>(path: P) -> anyhow::Result<T>
+pub fn from_file<P, T>(path: P) -> crate::Result<T>
 where
     P: AsRef<Path>,
     T: DeserializeOwned,
@@ -37,7 +37,7 @@ where
 /// # Errors
 ///
 /// Can fail while opening file or writing to it.
-pub fn to_file<P, T>(path: P, value: T) -> anyhow::Result<()>
+pub fn to_file<P, T>(path: P, value: T) -> crate::Result<()>
 where
     P: AsRef<Path>,
     T: Serialize,

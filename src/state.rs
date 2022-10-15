@@ -16,8 +16,8 @@ const DEFAULT_FILE_NAME: &str = "[default]";
 #[derive(Debug, Deserialize, Serialize)]
 /// Application state structure
 pub struct State {
-    /// index key of current active list
-    active_key: String,
+    /// name of current active list in the index
+    active_list: String,
     /// list file index using the key of a list's name to get that list's path
     list_index: Index,
 }
@@ -25,7 +25,7 @@ pub struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
-            active_key: String::from(DEFAULT_FILE_NAME),
+            active_list: String::from(DEFAULT_FILE_NAME),
             list_index: Index::default(),
         }
     }
@@ -56,23 +56,23 @@ impl State {
     ///
     /// # Arguments
     ///
-    /// * `key` - Index key of list to make active
+    /// * `name` - Key of list in the index to make active
     ///
     /// # Errors
     ///
-    /// If the given key doesn't exist in the index, it cannot be activated
-    pub fn activate<S: AsRef<str>>(&mut self, key: &S) -> crate::Result<()> {
-        let key = key.as_ref().to_string();
-        if !self.list_index.contains_name(&key) {
-            bail!("key `{}` doesn't exist in the index", key)
+    /// If the list name doesn't exist in the index, it cannot be activated
+    pub fn activate<S: AsRef<str>>(&mut self, name: &S) -> crate::Result<()> {
+        let name = name.as_ref().to_string();
+        if !self.list_index.contains_name(&name) {
+            bail!("name `{}` doesn't exist in the index", name)
         }
-        self.active_key = key;
+        self.active_list = name;
         Ok(())
     }
 
     /// Get active list path or [`None`] if there is no active list
     pub fn get_active_path(&self) -> Option<&PathBuf> {
-        self.list_index.get(&self.active_key)
+        self.list_index.get(&self.active_list)
     }
 }
 

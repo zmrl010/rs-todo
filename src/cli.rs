@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! Command line interface
 //!
 //! Using [`clap`] to do most of the legwork
@@ -11,8 +12,8 @@ use clap::{Parser, Subcommand};
 pub enum TaskCommand {
     /// Add a task to the todo list
     Add {
-        /// Task description text
         #[arg()]
+        /// Task description text
         text: String,
     },
     /// Remove a task from the todo list

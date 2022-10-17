@@ -43,14 +43,14 @@ pub fn run(args: CommandLineArgs) -> crate::Result<()> {
         .with_context(|| format!("failed `fs::create_dir_all({})`", &data_dir.display()))?;
 
     let state_file_path = data_dir.with_file_name(".state.json");
-    let state = State::load(&state_file_path)?;
+    let state: State = json::from_file(&state_file_path)?;
 
     let default_list_file = data_dir.with_file_name("[default].json");
     let active_list_path = state.get_active_path().unwrap_or(&default_list_file);
 
     run_task_command(args.command, active_list_path)?;
 
-    state.save(&state_file_path)?;
+    json::to_file(&state_file_path, state)?;
 
     Ok(())
 }

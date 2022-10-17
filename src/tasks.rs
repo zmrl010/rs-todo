@@ -13,6 +13,8 @@ use std::{
     path::PathBuf,
 };
 
+use crate::json;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub enum ErrorKind {}
 
@@ -32,15 +34,16 @@ impl fmt::Display for Task {
 }
 
 impl Task {
-    pub fn new<S: AsRef<str>>(text: S) -> Self {
+    pub fn new(text: String) -> Self {
         Self {
-            text: text.as_ref().to_string(),
+            text,
             created_at: Utc::now(),
             complete: false,
         }
     }
 }
 
+/// Read bytes from a reader
 fn read_all_bytes<R: Read>(rdr: R) -> crate::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(rdr);
     let mut buffer = Vec::new();
@@ -51,7 +54,7 @@ fn read_all_bytes<R: Read>(rdr: R) -> crate::Result<Vec<u8>> {
 fn collect_tasks(mut file: &File) -> crate::Result<Vec<Task>> {
     file.rewind()?; // Rewind before
     let bytes = read_all_bytes(file)?;
-    let tasks = serde_json::from_slice(&bytes).or_else(|err| {
+    let tasks = json::from_slice(&bytes).or_else(|err| {
         if err.is_eof() {
             return Ok(Vec::new());
         }
@@ -81,7 +84,7 @@ pub fn add_task(path: &PathBuf, task: Task) -> crate::Result<()> {
         task_list
     };
 
-    serde_json::to_writer(file, &task_list)?;
+    json::to_writer(file, &task_list)?;
     Ok(())
 }
 
@@ -113,7 +116,7 @@ pub fn complete_task(path: &PathBuf, position: usize) -> crate::Result<()> {
         task_list
     };
 
-    serde_json::to_writer(file, &task_list)?;
+    json::to_writer(file, &task_list)?;
 
     Ok(())
 }

@@ -3,6 +3,8 @@ use std::{fs, path::Path};
 
 use serde::{de::DeserializeOwned, Serialize};
 
+pub use serde_json::{from_slice, to_writer};
+
 /// Load and deserialize `T` from the file at the specified path
 ///
 /// See: [`fs::read`] and [`serde_json::from_slice`]

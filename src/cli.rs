@@ -7,9 +7,9 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-/// Commands for [`crate::tasks::Task`]
+/// [`Subcommand`]s for [`CommandLineArgs`]
 #[derive(Subcommand, Debug)]
-pub enum TaskCommand {
+pub enum Commands {
     /// Add a task to the todo list
     Add {
         /// Task description text
@@ -34,11 +34,15 @@ pub enum TaskCommand {
 pub struct CommandLineArgs {
     /// task subcommand to act on active list
     #[command(subcommand)]
-    pub command: TaskCommand,
+    pub command: Commands,
 
     /// data directory where application state is stored
     #[arg(short, long, env)]
     pub data_dir: Option<PathBuf>,
+
+    /// list that task commands are applied to
+    #[arg(short, long, env)]
+    pub list: Option<String>,
 }
 
 /// Parse from `std::env::args_os()`, exit on error

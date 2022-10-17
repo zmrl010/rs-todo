@@ -7,11 +7,11 @@ pub use serde_json::{from_slice, to_writer};
 
 /// Load and deserialize `T` from the file at the specified path
 ///
-/// See: [`fs::read`] and [`serde_json::from_slice`]
+/// Composes [`fs::read`] and [`serde_json::from_slice`]
 ///
 /// # Arguments
 ///
-/// * `path` - path of the file
+/// * `path` - path of file to read from
 ///
 /// # Errors
 ///
@@ -29,11 +29,11 @@ where
 
 /// Serialize `value` and save to the file at the specified path
 ///
-/// See: [`fs::write`] and [`serde_json::to_vec`]
+/// Composes [`fs::write`] and [`serde_json::to_vec`]
 ///
 /// # Arguments
 ///
-/// * `path` - path of the file
+/// * `path` - path of file to save to
 /// * `value` - value to serialize and save
 ///
 /// # Errors

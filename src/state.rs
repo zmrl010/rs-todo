@@ -6,15 +6,13 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 
-type ListIndex = HashMap<String, PathBuf>;
-
 #[derive(Debug, Deserialize, Serialize, Default)]
 /// Application state structure
 pub struct State {
     /// name of current active list in the index
     active_list: Option<String>,
     /// list file index using a list's name as a key to get that list's path
-    list_index: ListIndex,
+    list_index: HashMap<String, PathBuf>,
 }
 
 /// Set the list found at `index[key]` active
@@ -27,7 +25,7 @@ pub struct State {
 ///
 /// If the list name doesn't exist in the index, it cannot be activated
 pub fn activate_list(state: &mut State, key: String) -> crate::Result<()> {
-    if state.list_index.contains_key(&key) {
+    if !state.list_index.contains_key(&key) {
         bail!("list `{}` doesn't exist in the index", key)
     }
     state.active_list = Some(key);

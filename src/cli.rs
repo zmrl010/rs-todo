@@ -10,6 +10,12 @@ use clap::{Parser, Subcommand};
 /// [`Subcommand`]s for [`CommandLineArgs`]
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Activate a list by key. An active list will have future commands applied to it.
+    Activate {
+        #[arg()]
+        key: String,
+    },
+
     /// Add a task to the todo list
     Add {
         /// Task description text

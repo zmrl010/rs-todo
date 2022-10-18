@@ -18,6 +18,7 @@ use crate::json;
 #[derive(Debug, Deserialize, Serialize)]
 pub enum ErrorKind {}
 
+/// Structure to represent a single task
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
     pub text: String,
@@ -51,6 +52,7 @@ fn read_all_bytes<R: Read>(rdr: R) -> crate::Result<Vec<u8>> {
     Ok(buffer)
 }
 
+/// Read serialized task list from a file into a [`Vec<Task>`]
 fn collect_tasks(mut file: &File) -> crate::Result<Vec<Task>> {
     file.rewind()?; // Rewind before
     let bytes = read_all_bytes(file)?;

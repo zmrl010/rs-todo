@@ -81,9 +81,10 @@ pub fn get_active_path(state: &State) -> Option<&PathBuf> {
     state
         .active_list
         .as_ref()
-        .and_then(|key| get_list(state, key))
+        .and_then(|key| get_list_path(state, key))
 }
 
-pub fn get_list<S: AsRef<str>>(state: &State, key: S) -> Option<&PathBuf> {
+/// Get a list's path from the index or [`None`] if there is no record for the `key`
+pub fn get_list_path<S: AsRef<str>>(state: &State, key: S) -> Option<&PathBuf> {
     state.list_index.get(key.as_ref())
 }

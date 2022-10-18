@@ -1,4 +1,5 @@
 mod cli;
+mod dirs;
 mod json;
 mod state;
 mod tasks;
@@ -13,23 +14,12 @@ use tasks::Task;
 pub use anyhow::Result;
 pub use cli::{parse, CommandLineArgs};
 
-const APP_DATA_DIRECTORY: &str = ".rs-todo/";
 const STATE_FILE_NAME: &str = ".state.json";
-
-/// Get application data directory starting from system user's data directory
-///
-/// [`dirs::data_dir`]
-fn find_default_data_dir() -> Option<PathBuf> {
-    dirs::data_dir().map(|mut data_dir| {
-        data_dir.push(APP_DATA_DIRECTORY);
-        data_dir
-    })
-}
 
 /// Create directory and any parents if they don't already exist
 ///
 /// See [`fs::create_dir_all`] and [`anyhow::Context`]
-fn create_dirs(path: &PathBuf) -> crate::Result<()> {
+fn create_dir_all(path: &PathBuf) -> crate::Result<()> {
     fs::create_dir_all(path).with_context(|| format!("failed to create `{}`", path.display()))
 }
 
@@ -37,10 +27,10 @@ fn create_dirs(path: &PathBuf) -> crate::Result<()> {
 /// Create any components in the path that don't exist
 fn resolve_data_dir(data_dir: Option<PathBuf>) -> crate::Result<PathBuf> {
     data_dir
-        .or_else(find_default_data_dir)
+        .or_else(dirs::data_dir)
         .ok_or_else(|| anyhow!("failed to find data directory"))
         .and_then(|dir| {
-            create_dirs(&dir)?;
+            create_dir_all(&dir)?;
             Ok(dir)
         })
 }
@@ -54,7 +44,7 @@ pub fn run(args: CommandLineArgs) -> crate::Result<()> {
 
     let active_list_path = args
         .list
-        .and_then(|key| state::get_list(&app_state, &key))
+        .and_then(|key| state::get_list_path(&app_state, &key))
         .or_else(|| state::get_active_path(&app_state))
         .ok_or_else(|| anyhow!("No active path"))?;
 

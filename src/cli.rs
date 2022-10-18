@@ -10,7 +10,8 @@ use clap::{Parser, Subcommand};
 /// [`Subcommand`]s for [`CommandLineArgs`]
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Activate a list by key. An active list will have future commands applied to it.
+    /// Activate a list by key. Commands following this
+    /// one will be applied to that list
     Activate {
         #[arg()]
         key: String,
@@ -43,10 +44,24 @@ pub struct CommandLineArgs {
     pub command: Commands,
 
     /// data directory where application state is stored
+    ///
+    /// # Default
+    ///
+    /// ```rust
+    /// use std::path::PathBuf;
+    ///
+    /// PathBuf::from("~/.rs-todo/");
+    /// ```
     #[arg(short, long, env)]
     pub data_dir: Option<PathBuf>,
 
-    /// list that task commands are applied to
+    /// key of list that task commands are applied to
+    ///
+    /// # Default
+    ///
+    /// ```rust
+    /// "[default]"
+    /// ```
     #[arg(short, long, env)]
     pub list: Option<String>,
 }

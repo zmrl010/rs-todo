@@ -20,6 +20,8 @@ pub struct State {
     active_list: Option<String>,
     /// list file index using a list's name as a key to get that list's path
     list_index: HashMap<String, PathBuf>,
+    #[serde(skip)]
+    path: PathBuf,
 }
 
 impl Default for State {
@@ -30,6 +32,7 @@ impl Default for State {
                 String::from(DEFAULT_LIST),
                 PathBuf::from(format!("{}.json", DEFAULT_LIST)),
             )]),
+            path: PathBuf::new(),
         }
     }
 }
@@ -49,8 +52,8 @@ impl State {
     /// # Arguments
     ///
     /// * `path` - path to file being saved to
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> crate::Result<()> {
-        json::to_file(path, &self)
+    pub fn save(&self) -> crate::Result<()> {
+        json::to_file(&self.path, &self)
     }
 }
 
@@ -60,20 +63,19 @@ impl State {
 ///
 /// # Arguments
 ///
-/// * `path` - path to file where state is persisted
+/// * `state` - loaded state object
 /// * `key` - Key name of list in the index to make active
 ///
 /// # Errors
 ///
 /// If the list key doesn't exist in the index, it cannot be activated
-pub fn activate_list(path: PathBuf, key: String) -> crate::Result<()> {
-    let mut state = State::load(&path)?;
+pub fn activate_list(mut state: State, key: String) -> crate::Result<()> {
     if !state.list_index.contains_key(&key) {
         bail!("list `{}` doesn't exist in the index", key)
     }
     state.active_list = Some(key);
 
-    state.save(path)
+    state.save()
 }
 
 /// Get active list path or [`None`] if there is no active list set
